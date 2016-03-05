@@ -4,13 +4,42 @@
 
 {% block page_content %}
 <div class="page-header">
-    <h1>Tests</h1>   
+    <h1>Tests</h1>
+    {% if session['subject'] is not none %}
+    <p>Filter Present -- {{session['subject']}}</p>
+    <form action="{{url_for('submittest', subjectname=session['subject'] )}}">
+        <input type="submit" value="Add Test">
+    </form>     
+    {% endif %}
 </div>
 
+<table style="border-spacing: 30px; border-collapse: separate">
 {% for test in tests %}
-    <p> 
-        <a href="{{ url_for('questionbytest', testname=test.test) }}"> {{loop.index}} - {{test.testname}}</a>            
-    </p> 
+    <tr> 
+        <td>
+            <h4>
+                {{loop.index}}
+            </h4>
+        </td>
+        <td>
+            <h4> 
+                <a href="{{ url_for('questionbytest', testname=test.test) }}"> {{test.testname}}</a>            
+            </h4> 
+        </td>
+        <td>
+            <form action="{{ url_for('subject') }}">
+                <input type="submit" value="Edit {{test.testname}}">
+            </form>                    
+        </td>        
+        <td>
+            <form action="{{ url_for('deletetest', testname=test.testname) }}">
+                <input type="submit" value="Delete {{test.testname}}">
+            </form>
+        </td>        
+        
+
+    </tr>     
 {% endfor %}       
+</table>
 
 {% endblock %}

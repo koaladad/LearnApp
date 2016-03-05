@@ -96,30 +96,40 @@ def index():
 
 @app.route('/subject')
 def subject():
+    session['subject']=None
+    session['test']=None
+    session['question']=None
     return render_template('subject.html', subjects = view_subjects_default_page())
 
 
 @app.route('/test/')
 def test():
+    session['subject']=None
+    session['test']=None
+    session['question']=None
     return render_template('test.html', tests=view_tests_default_page())
 
 
 @app.route('/question')
 def question():
+    session['subject']=None
+    session['test']=None
+    session['question']=None
     return render_template('question.html', questions=view_questions_default_page())
 
 
 #-------------------------------X by Y----------------------------------------#       
 @app.route('/testbysubject/<string:subjectname>')
 def testbysubject(subjectname):
-    #search_query = subjectname
-    subjects=view_subjects(subjectname)
-    return render_template('test.html', tests=view_tests(subjects))#
+    session['subject']=subjectname
+    subjects=view_subjects(subjectname)  
+    return render_template('test.html', tests=view_tests(subjects))
 
     
 @app.route('/questionbytest/<string:testname>')
 def questionbytest(testname):
-    tests=view_tests(testname)#jangus
+    session['test']=testname
+    tests=view_tests(testname)
     return render_template('question.html', questions=view_questions(tests))    
     
     
@@ -142,20 +152,96 @@ def submitsubject():
     return render_template('add_entry.html', form=form)#, subject=session.get('subject'))
     
     
-@app.route('/submittest', methods=['GET', 'POST'])
-def submittest():
+@app.route('/submittest/<string:subjectname>', methods=['GET', 'POST'])
+def submittest(subjectname):
+    subjects=view_subjects(subjectname)
+    tests = view_tests(subjects)
+    
     form = TestForm()
     if form.validate_on_submit():
         session['test'] = form.test.data
         #add subject to database        
-        add_test(form.test.data)
+        add_test(subjects, form.test.data) #need a subject and then a test
         
         flash('Great Job Dude')
         form.test.data = ''
-        return redirect(url_for('test'))
+        return redirect(url_for('testbysubject'))
         #return session.get('subject')
-    return render_template('add_entry.html', form=form)#, subject=session.get('subject'))    
+        
+    return render_template('add_entry.html', form=form)#, subject=session.get('subject'))    ##now modify add test to have test in additoin to subject
 
+
+#-------------------------------Routing Removals----------------------------------------#
+@app.route('/deletesubject/<string:subjectname>', methods=['GET'])
+def deletesubject(subjectname):
+    #delete all subjects, tests, and questions
+    subjects = view_subjects(subjectname)
+    tests  = view_tests(subjects)
+    questions = view_questions(tests)
+    
+    #delete all questions if questions is not None
+    if questions is not None:
+        for question in questions:
+            delete_subject(question)
+            
+    if tests is not None:
+        for test in tests:
+            delete_test(test)                
+
+    if subjects is not None:
+        for subject in subjects:
+            delete_subject(subject)  
+
+    return redirect(url_for('subject'))
+    
+    
+@app.route('/deletetest/<string:testname>', methods=['GET'])
+def deletetest(testname):
+    #delete all tests and questions, need to call subjectname to get parents for view_tests
+
+    subjects = view_subjects(test.subject.subjectname)
+    tests  = view_tests(subjects, testname)
+    questions = view_questions(tests)
+    
+    #delete all questions if questions is not None
+    if questions is not None:
+        for question in questions:
+            delete_subject(question)
+            
+    if tests is not None:
+        for test in tests:
+            delete_test(test)                 
+
+    return redirect(url_for('test'))
+    
+    
+"""@app.route('/deletequestion/<string:question>', methods=['GET'])
+def deletequestion(question):
+    #delete all questions, need to call testname and subjectname to get parents for view tests and view questions
+    testname = question.test.testname
+    
+    
+    tests = view_tests(question.test.testname)
+    
+    subjects = view_subjects(test.subject.subjectname)
+    tests  = view_tests(subjects)
+    questions = view_questions(tests)
+    
+    #delete all questions if questions is not None
+    if questions is not None:
+        for (question in questions):
+            delete_subject(question)
+            
+    if tests is not None:
+        for (test in tests):
+            delete_test(test)                
+
+    if subjects is not None:
+        for subject in subjects:
+            delete_subject(subject)  
+
+    return redirect(url_for('subject'))
+"""
     
 #-------------------------------DB Add Methods----------------------------------------#
 def add_subject(subject):

@@ -20,6 +20,7 @@ db = SqliteDatabase('learn.db')
 
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'fdasj897342_!??#$JOI#$*~~&&&%%fdsajm'
 
 manager = Manager(app)
 bootstrap = Bootstrap(app)
@@ -33,7 +34,7 @@ class BaseModel(Model):
 
 class Subject(BaseModel):
 	subjectname = TextField(unique=True)
-	timestamp = DateTimeField(default=datetime.datetime.now)
+	timestamp = DateTimeField(default=datetime.datetime.utcnow())
 	
 	
 class Test(BaseModel):
@@ -90,31 +91,41 @@ def internal_server_error(e):
 #-------------------------------Routing----------------------------------------#    
 @app.route('/')
 def index():
-    return render_template('index.html',
-                           current_time=datetime.utcnow())                          
+    return render_template('index.html')                          
 
 
 @app.route('/subject')
 def subject():
-    return render_template('subject.html',
-                           current_time=datetime.utcnow())
+    return render_template('subject.html', subjects = view_subjects_default_page())
 
-                           
-@app.route('/test')
+
+@app.route('/test/')
 def test():
-    return render_template('test.html',
-                           current_time=datetime.utcnow())                           
+    return render_template('test.html', tests=view_tests_default_page())
 
 
 @app.route('/question')
 def question():
-    return render_template('question.html',
-                           current_time=datetime.utcnow())
+    return render_template('question.html', questions=view_questions_default_page())
 
 
-@app.route('/user/<name>')
-def user(name):
-    return render_template('user.html', name=name)
+#-------------------------------X by Y----------------------------------------#       
+@app.route('/testbysubject/<string:subjectname>')
+def testbysubject(subjectname):
+    #search_query = subjectname
+    subjects=view_subjects(subjectname)
+    return render_template('test.html', tests=view_tests(subjects))#
+
+    
+@app.route('/questionbytest/<string:testname>')
+def questionbytest(testname):
+    tests=view_tests(testname)#jangus
+    return render_template('question.html', questions=view_questions(tests))    
+    
+    
+#@app.route('/user/<name>')
+#def user(name):
+    #return render_template('user.html', name=name)
     
     
 @app.route('/submitsubject', methods=['GET', 'POST'])
@@ -122,15 +133,31 @@ def submitsubject():
     form = SubjectForm()
     if form.validate_on_submit():
         session['subject'] = form.subject.data
-        #add subject to database
-        
+        #add subject to database        
+        add_subject(form.subject.data)
         
         form.subject.data = ''
-        return redirect(url_for('submitsubject'))
-    return render_template('subject.html', form=form, subject=session.get('subject'))
+        return redirect(url_for('subject'))
+        #return session.get('subject')
+    return render_template('add_entry.html', form=form)#, subject=session.get('subject'))
+    
+    
+@app.route('/submittest', methods=['GET', 'POST'])
+def submittest():
+    form = TestForm()
+    if form.validate_on_submit():
+        session['test'] = form.test.data
+        #add subject to database        
+        add_test(form.test.data)
+        
+        flash('Great Job Dude')
+        form.test.data = ''
+        return redirect(url_for('test'))
+        #return session.get('subject')
+    return render_template('add_entry.html', form=form)#, subject=session.get('subject'))    
 
     
-#-------------------------------DBMethods----------------------------------------#
+#-------------------------------DB Add Methods----------------------------------------#
 def add_subject(subject):
     try:
         Subject.create(subjectname=subject)
@@ -154,17 +181,21 @@ def add_question(test, question):
     except IntegrityError:
         flash("Test already exists!")
   
-  
+
+#-------------------------------DB View Methods----------------------------------------#         
 def view_subjects(search_query=None):
   """View previous subjects"""
-  subjects = Subject.select().order_by(Subject.timestamp.desc())
-  
-  if search_query:
+  if search_query is not None:
+    subjects = Subject.select().where(Subject.subjectname == search_query).order_by(Subject.subjectname.asc())  
     subjects = subjects.where(Subject.subjectname.contains(search_query))
+  else:
+    subjects = Subject.select().order_by(Subject.subjectname.asc())
   
   return subjects
-	  
-	  
+
+  
+#need to modify so it uses subjectname instead of subject
+#todo, modified Test.subject to Test.subject.subjectname	  
 def view_tests(subject, search_query=None):
   """View previous tests"""
   tests = Test.select().where(Test.subject == subject).order_by(Test.testname.asc())
@@ -177,14 +208,33 @@ def view_tests(subject, search_query=None):
   
 def view_questions(test, search_query=None):
   """View previous tests"""
-  tests = Test.select().where(Question.test == test).order_by(Question.question.asc())
+  questions = Question.select().where(Question.test == test).order_by(Question.question.asc())
   
   if search_query:
     questions = questions.where(question.question.contains(search_query))
   
   return questions
       
-  
+      
+def view_subjects_default_page():
+    """View all tests, for default test page"""
+    subjects = Subject.select()
+    return subjects
+      
+
+def view_tests_default_page():
+    """View all tests, for default test page"""
+    tests = Test.select()
+    return tests
+
+
+def view_questions_default_page():
+    """View all tests, for default test page"""
+    questions = Question.select()
+    return questions
+
+    
+#-------------------------------DB Remove Methods----------------------------------------#         
 def delete_subject(subject): #might need to pass in database object here instead of just a phrase, or convert the phrase into db object
     subject.delete_instance()
 	
@@ -197,7 +247,7 @@ def delete_question(question):
     question.delete_instance()    
 
 
-    
+#-------------------------------Initialization----------------------------------------#            
 if __name__ == '__main__':
     initialize()
     manager.run()

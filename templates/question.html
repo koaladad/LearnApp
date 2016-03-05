@@ -4,6 +4,12 @@
 
 {% block page_content %}
 <div class="page-header">
-    <h1>Questions</h1>
+    <h1>Questions</h1>     
 </div>
+
+{% for question in questions %}
+    <p> 
+            {{loop.index}} - {{question.question}}
+    </p> 
+{% endfor %}  
 {% endblock %}

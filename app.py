@@ -102,12 +102,12 @@ def subject():
     return render_template('subject.html', subjects = view_subjects_default_page())
 
 
-@app.route('/test/')
+@app.route('/test')
 def test():
     session['subject']=None
     session['test']=None
     session['question']=None
-    return render_template('test.html', tests=view_tests_default_page())
+    return render_template('test.html', tests = view_tests_default_page())
 
 
 @app.route('/question')
@@ -115,7 +115,7 @@ def question():
     session['subject']=None
     session['test']=None
     session['question']=None
-    return render_template('question.html', questions=view_questions_default_page())
+    return render_template('question.html', questions = view_questions_default_page())
 
 
 #-------------------------------X by Y----------------------------------------#       
@@ -161,14 +161,12 @@ def submittest(subjectname):
     if form.validate_on_submit():
         session['test'] = form.test.data
         #add subject to database        
-        add_test(subjects, form.test.data) #need a subject and then a test
-        
-        flash('Great Job Dude')
+        add_test(subjects, form.test.data)
+
         form.test.data = ''
-        return redirect(url_for('testbysubject'))
-        #return session.get('subject')
+        return redirect(url_for('testbysubject', subjectname=subjectname))
         
-    return render_template('add_entry.html', form=form)#, subject=session.get('subject'))    ##now modify add test to have test in additoin to subject
+    return render_template('add_entry.html', form=form)
 
 
 #-------------------------------Routing Removals----------------------------------------#
@@ -197,9 +195,8 @@ def deletesubject(subjectname):
     
 @app.route('/deletetest/<string:testname>', methods=['GET'])
 def deletetest(testname):
-    #delete all tests and questions, need to call subjectname to get parents for view_tests
-
-    subjects = view_subjects(test.subject.subjectname)
+    subjectname = session['subject']  
+    subjects = view_subjects(subjectname)
     tests  = view_tests(subjects, testname)
     questions = view_questions(tests)
     
@@ -212,7 +209,8 @@ def deletetest(testname):
         for test in tests:
             delete_test(test)                 
 
-    return redirect(url_for('test'))
+    #return redirect(url_for('subject'))
+    return redirect(url_for('testbysubject', subjectname=subjectname))
     
     
 """@app.route('/deletequestion/<string:question>', methods=['GET'])

@@ -129,10 +129,10 @@ def testbysubject(subjectname):
 @app.route('/questionbytest/<string:testname>')
 def questionbytest(testname):
     session['test']=testname
-    tests=view_tests(testname)
+    subjects=view_subjects(testname)
+    tests=view_tests(subjects) #need to put in subject, not testname here
     #have testname, just do a select of tests where testname = bleh   
-
-    return render_template('question.html', questions=view_questions(tests, testname))
+    return render_template('question.html', questions=view_questions(tests)) #PROBLEM HERE
       
     
     
@@ -175,7 +175,11 @@ def submitquestion(testname):
     form = QuestionForm()
     if form.validate_on_submit():
         session['question'] = form.question.data
-        add_question(tests, form.question.data)
+        question = request.form['question']
+        correct_answer = request.form['correct_answer']
+        incorrect_answer_list = request.form['incorrect_answer_list']
+
+        #add_question(tests, question, correct_answer, incorrect_answer_list) #This is breaking stuff
 
         form.question.data = ''
         return redirect(url_for('questionbytest', testname=testname))
@@ -244,9 +248,9 @@ def add_test(subject, test):
         flash("Test already exists!")
             
             
-def add_question(test, question):
+def add_question(test, question, correct_answer, incorrect_answer_list):
     try:
-        Test.create(testname = test, subject = subject) #This is creating issues
+        Question.create(test = test, question = question, correct_answer = correct_answer, incorrect_answer_list = incorrect_answer_list) #This is creating issues
         flash("Saved successfully.")
     except IntegrityError:
         flash("Test already exists!")
@@ -286,12 +290,11 @@ def view_questions(test, search_query=None):
   #if search_query:
     #questions = questions.where(question.question.contains(search_query))
   if search_query is not None:
-    questions = Question.select().where(Question.question == search_query).order_by(Question.question.asc())  
+    questions = Question.select().where(Question.test == test).order_by(Question.question.asc())  
     questions = questions.where(Question.question.contains(search_query))
   else:
-    questions = Question.select().order_by(Question.question.asc())    
+    questions = Question.select().where(Question.test == test).order_by(Question.question.asc())    
     
-  
   return questions
       
       

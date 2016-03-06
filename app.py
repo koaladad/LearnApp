@@ -130,12 +130,10 @@ def testbysubject(subjectname):
 def questionbytest(testname):
     session['test']=testname
     tests=view_tests(testname)
-    return render_template('question.html', questions=view_questions(tests))    
-    
-    
-#@app.route('/user/<name>')
-#def user(name):
-    #return render_template('user.html', name=name)
+    #have testname, just do a select of tests where testname = bleh   
+
+    return render_template('question.html', questions=view_questions(tests, testname))
+      
     
     
 @app.route('/submitsubject', methods=['GET', 'POST'])
@@ -168,6 +166,21 @@ def submittest(subjectname):
         
     return render_template('add_entry.html', form=form)
 
+    
+@app.route('/submitquestion/<string:testname>', methods=['GET', 'POST'])
+def submitquestion(testname):
+    tests=view_tests(testname)
+    questions = view_questions(tests)
+    
+    form = QuestionForm()
+    if form.validate_on_submit():
+        session['question'] = form.question.data
+        add_question(tests, form.question.data)
+
+        form.question.data = ''
+        return redirect(url_for('questionbytest', testname=testname))
+        
+    return render_template('add_entry.html', form=form)    
 
 #-------------------------------Routing Removals----------------------------------------#
 @app.route('/deletesubject/<string:subjectname>', methods=['GET'])
@@ -212,34 +225,7 @@ def deletetest(testname):
     #return redirect(url_for('subject'))
     return redirect(url_for('testbysubject', subjectname=subjectname))
     
-    
-"""@app.route('/deletequestion/<string:question>', methods=['GET'])
-def deletequestion(question):
-    #delete all questions, need to call testname and subjectname to get parents for view tests and view questions
-    testname = question.test.testname
-    
-    
-    tests = view_tests(question.test.testname)
-    
-    subjects = view_subjects(test.subject.subjectname)
-    tests  = view_tests(subjects)
-    questions = view_questions(tests)
-    
-    #delete all questions if questions is not None
-    if questions is not None:
-        for (question in questions):
-            delete_subject(question)
-            
-    if tests is not None:
-        for (test in tests):
-            delete_test(test)                
-
-    if subjects is not None:
-        for subject in subjects:
-            delete_subject(subject)  
-
-    return redirect(url_for('subject'))
-"""
+   
     
 #-------------------------------DB Add Methods----------------------------------------#
 def add_subject(subject):
@@ -260,7 +246,7 @@ def add_test(subject, test):
             
 def add_question(test, question):
     try:
-        Test.create(testname = test, subject = subject)
+        Test.create(testname = test, subject = subject) #This is creating issues
         flash("Saved successfully.")
     except IntegrityError:
         flash("Test already exists!")
@@ -281,21 +267,30 @@ def view_subjects(search_query=None):
 #need to modify so it uses subjectname instead of subject
 #todo, modified Test.subject to Test.subject.subjectname	  
 def view_tests(subject, search_query=None):
-  """View previous tests"""
-  tests = Test.select().where(Test.subject == subject).order_by(Test.testname.asc())
-  
-  if search_query:
+  """View previous tests""" 
+  #tests = Test.select().where(Test.subject == subject).order_by(Test.testname.asc())
+  #if search_query:
+    #tests = tests.where(Test.testname.contains(search_query))
+  if search_query is not None:
+    tests = Test.select().where(Test.testname == search_query).order_by(Test.testname.asc())  
     tests = tests.where(Test.testname.contains(search_query))
+  else:
+    tests = Test.select().order_by(Test.testname.asc())    
   
   return tests
   
   
 def view_questions(test, search_query=None):
   """View previous tests"""
-  questions = Question.select().where(Question.test == test).order_by(Question.question.asc())
-  
-  if search_query:
-    questions = questions.where(question.question.contains(search_query))
+  #questions = Question.select().where(Question.test == test).order_by(Question.question.asc())
+  #if search_query:
+    #questions = questions.where(question.question.contains(search_query))
+  if search_query is not None:
+    questions = Question.select().where(Question.question == search_query).order_by(Question.question.asc())  
+    questions = questions.where(Question.question.contains(search_query))
+  else:
+    questions = Question.select().order_by(Question.question.asc())    
+    
   
   return questions
       

@@ -13,6 +13,7 @@ from collections import OrderedDict
 import datetime
 import os
 import sys
+import random
 
 from peewee import *
 
@@ -165,7 +166,8 @@ def submitsubject():
 @app.route('/submittest/<string:subjectname>', methods=['GET', 'POST'])
 def submittest(subjectname):
     subjects=view_subjects(subjectname)
-    tests = view_tests(subjects)
+    testname = session['test']
+    tests = view_tests(subjects, testname)
     
     form = TestForm()
     if form.validate_on_submit():
@@ -176,6 +178,32 @@ def submittest(subjectname):
         return redirect(url_for('testbysubject', subjectname=subjectname))
         
     return render_template('add_entry.html', form=form)
+    
+
+@app.route('/taketest/<string:testname>', methods=['GET','POST'])
+def taketest(testname):
+    subjects = view_subjects(session['subject'])
+    tests = view_tests(subjects, testname)
+    questions = view_questions(tests)
+
+    question_arr = []    
+    answer_arr = []
+    explanations = []
+    incorrect_answer_list = []
+    
+    for question in questions:
+        question_arr.append(question.question)
+        answer_arr.append(question.answer)
+        explanations.append(question.explanation)
+        incorrect_answer_list.append(question.incorrect_answer_list)   
+
+    count_list = []
+    for i in range(0,(len(question_arr))):
+        count_list.append(i)
+        
+    random.shuffle(count_list) #shuffle count list for looping through questions
+ 
+    return render_template('take_test.html', questions=questions, question_arr=question_arr, answer_arr=answer_arr, explanations=explanations,  incorrect_answer_list=incorrect_answer_list,  count_list=count_list)
 
     
 @app.route('/submitquestion/<string:testname>', methods=['GET', 'POST'])

@@ -34,8 +34,8 @@
             </h4>           
         </td>
         <td>
-            <form action="{{ url_for('subject') }}">
-                <input type="submit" value="Edit {{test.testname}}">
+            <form action="{{ url_for('taketest', testname=test.testname) }}">
+                <input type="submit" value="Take Test">
             </form>                    
         </td>        
         <td>

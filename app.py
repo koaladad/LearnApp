@@ -20,7 +20,7 @@ db = SqliteDatabase('learn.db')
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'fdasj897342_!??#$JOI#$*~~&&&%%fdsajm'
+app.config['SECRET_KEY'] = 'Enter your secret key here bro'
 
 manager = Manager(app)
 bootstrap = Bootstrap(app)
@@ -46,7 +46,8 @@ class Question(BaseModel):
 	test = ForeignKeyField(Test, related_name='questions')
 	question = TextField(unique=True)
 	answer = TextField()
-	#incorrect_answer_list = TextField()
+	incorrect_answer_list = TextField()
+    explanation = TextField()
 
 #-------------------------------Forms----------------------------------------#
 class SubjectForm(Form):
@@ -60,12 +61,13 @@ class TestForm(Form):
 class QuestionForm(Form):
     question = StringField('Enter the question', validators=[Required()])
     answer = StringField('Enter the answer', validators=[Required()])
-    #incorrect_answer_list = StringField('Enter the list of incorrect answers, comma-separated', 
-     #                                   validators=[
-      #                                  Required(),
-       #                                 Regexp(message='list needs to be comma separated',
-        #                                regex=r'[0-9a-zA-Z]+(,[0-9a-zA-Z]+)*')
-         #                               ])
+    incorrect_answer_list = StringField('Enter the list of incorrect answers, comma-separated', 
+                                        validators=[
+                                        Required(),
+                                        Regexp(message='list needs to be comma separated',
+                                        regex=r'[0-9a-zA-Z]+(,[0-9a-zA-Z]+)*')
+                                        ])
+    explanation = StringField('Enter explanation for answer', validators=[Required()])
     submit = SubmitField('Submit Question')
 
     
@@ -168,32 +170,20 @@ def submittest(subjectname):
     
 @app.route('/submitquestion/<string:testname>', methods=['GET', 'POST'])
 def submitquestion(testname):
-    #you need a subject, not a testname here
-    #tests=view_tests(testname)
-    subjects = view_subjects(session['subject'])
-    
+    subjects = view_subjects(session['subject'])   
     tests = Test.select().where(Test.subject == subjects)
-    
-    #need to get the subject here from testname#JANGUS
-
     questions = view_questions(tests)
     
     form = QuestionForm()
+    
     if form.validate_on_submit():
-        #session['question'] = form.question.data
+        #alternate method: session['question'] = form.question.data
         question = request.form['question']
         answer = request.form['answer']
-        
-        #need to get test object
+            
         tests=view_tests(view_subjects(session['subject']))
-        #incorrect_answer_list = request.form['incorrect_answer_list']
-        #request.form['incorrect_answer_list']
-        #form.question.data ~= request.form['question']
-        
-        #add_question(question, correct_answer, incorrect_answer_list, testname) #This is breaking stuff JANGUS, might need to fix test
-        
-        #return "{},{},{},{}".format(tests.testname, subject.subjectname, question,answer)
-        add_question(tests, question, answer) #THIS IS BREAKING IT
+
+        add_question(tests, question, answer)
         form.question.data = ''
         return redirect(url_for('questionbytest', testname=testname))
         
@@ -263,8 +253,6 @@ def add_test(subject, test):
             
 def add_question(test, question, answer):
     try:
-        #Question.create(question = question, correct_answer = correct_answer, incorrect_answer_list = incorrect_answer_list, test = test)
-        #Question.create(test = test, question = question, answer = answer)
         Question.create(test = test, question = question, answer = answer)
         flash("Saved successfully.")
     except IntegrityError:
@@ -287,9 +275,6 @@ def view_subjects(search_query=None):
 #todo, modified Test.subject to Test.subject.subjectname	  
 def view_tests(subject, search_query=None):
   """View previous tests""" 
-  #tests = Test.select().where(Test.subject == subject).order_by(Test.testname.asc())
-  #if search_query:
-    #tests = tests.where(Test.testname.contains(search_query))
   if search_query is not None:
     tests = Test.select().where(Test.subject == subject).order_by(Test.testname.asc())  
     tests = tests.where(Test.testname.contains(search_query))
@@ -301,9 +286,6 @@ def view_tests(subject, search_query=None):
   
 def view_questions(test, search_query=None):
   """View previous tests"""
-  #questions = Question.select().where(Question.test == test).order_by(Question.question.asc())
-  #if search_query:
-    #questions = questions.where(question.question.contains(search_query))
   if search_query is not None:
     questions = Question.select().where(Question.test == test).order_by(Question.question.asc())  
     questions = questions.where(Question.question.contains(search_query))
@@ -332,7 +314,7 @@ def view_questions_default_page():
 
     
 #-------------------------------DB Remove Methods----------------------------------------#         
-def delete_subject(subject): #might need to pass in database object here instead of just a phrase, or convert the phrase into db object
+def delete_subject(subject):
     subject.delete_instance()
 	
 	

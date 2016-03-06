@@ -20,7 +20,7 @@ db = SqliteDatabase('learn.db')
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'KEEP THIS PRIVATE BTCH'
+app.config['SECRET_KEY'] = 'fdaskjfdas908*FNSD(F)*DSN)F*_Shsdafjkasdjf98n*(&N*7nfdasndhasfjfdsahn78y'
 
 manager = Manager(app)
 bootstrap = Bootstrap(app)
@@ -181,7 +181,8 @@ def submittest(subjectname):
 @app.route('/submitquestion/<string:testname>', methods=['GET', 'POST'])
 def submitquestion(testname):
     subjects = view_subjects(session['subject'])   
-    tests = Test.select().where(Test.subject == subjects)
+    #tests = Test.select().where(Test.subject == subjects)
+    tests = view_tests(subjects, testname)
     questions = view_questions(tests)
     
     form = QuestionForm()
@@ -195,7 +196,7 @@ def submitquestion(testname):
             
         tests=view_tests(view_subjects(session['subject']))
 
-        add_question(tests, question, answer, incorrect_answer_list, explanation)
+        add_question(tests, question, answer, incorrect_answer_list, explanation) #Jangus, this is broken
         form.question.data = ''
         return redirect(url_for('questionbytest', testname=testname))
         

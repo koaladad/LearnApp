@@ -45,28 +45,28 @@ class Test(BaseModel):
 class Question(BaseModel):
 	test = ForeignKeyField(Test, related_name='questions')
 	question = TextField(unique=True)
-	correct_answer = TextField()
-	incorrect_answer_list = TextField()
+	answer = TextField()
+	#incorrect_answer_list = TextField()
 
 #-------------------------------Forms----------------------------------------#
 class SubjectForm(Form):
-    subject = StringField('Please enter the subject name', validators=[Required()])
-    submit = SubmitField('Submit')
+    subject = StringField('Enter the subject name', validators=[Required()])
+    submit = SubmitField('Submit Subject')
     
 class TestForm(Form):
-    test = StringField('Please enter the test name', validators=[Required()])
-    submit = SubmitField('Submit')
+    test = StringField('Enter the test name', validators=[Required()])
+    submit = SubmitField('Submit Test')
 
 class QuestionForm(Form):
-    question = StringField('Please enter the question text', validators=[Required()])
-    correct_answer = StringField('Please enter the correct answer', validators=[Required()])
-    incorrect_answer_list = StringField('Enter the list of incorrect answers, comma-separated', 
-                                        validators=[
-                                        Required(),
-                                        Regexp(message='list needs to be comma separated',
-                                        regex=r'[0-9a-zA-Z]+(,[0-9a-zA-Z]+)*')
-                                        ])
-    submit = SubmitField('Submit')
+    question = StringField('Enter the question', validators=[Required()])
+    answer = StringField('Enter the answer', validators=[Required()])
+    #incorrect_answer_list = StringField('Enter the list of incorrect answers, comma-separated', 
+     #                                   validators=[
+      #                                  Required(),
+       #                                 Regexp(message='list needs to be comma separated',
+        #                                regex=r'[0-9a-zA-Z]+(,[0-9a-zA-Z]+)*')
+         #                               ])
+    submit = SubmitField('Submit Question')
 
     
 
@@ -157,8 +157,7 @@ def submittest(subjectname):
     
     form = TestForm()
     if form.validate_on_submit():
-        session['test'] = form.test.data
-        #add subject to database        
+        session['test'] = form.test.data  
         add_test(subjects, form.test.data)
 
         form.test.data = ''
@@ -169,18 +168,32 @@ def submittest(subjectname):
     
 @app.route('/submitquestion/<string:testname>', methods=['GET', 'POST'])
 def submitquestion(testname):
-    tests=view_tests(testname)
+    #you need a subject, not a testname here
+    #tests=view_tests(testname)
+    subjects = view_subjects(session['subject'])
+    
+    tests = Test.select().where(Test.subject == subjects)
+    
+    #need to get the subject here from testname#JANGUS
+
     questions = view_questions(tests)
     
     form = QuestionForm()
     if form.validate_on_submit():
-        session['question'] = form.question.data
+        #session['question'] = form.question.data
         question = request.form['question']
-        correct_answer = request.form['correct_answer']
-        incorrect_answer_list = request.form['incorrect_answer_list']
-
-        #add_question(tests, question, correct_answer, incorrect_answer_list) #This is breaking stuff
-
+        answer = request.form['answer']
+        
+        #need to get test object
+        tests=view_tests(view_subjects(session['subject']))
+        #incorrect_answer_list = request.form['incorrect_answer_list']
+        #request.form['incorrect_answer_list']
+        #form.question.data ~= request.form['question']
+        
+        #add_question(question, correct_answer, incorrect_answer_list, testname) #This is breaking stuff JANGUS, might need to fix test
+        
+        #return "{},{},{},{}".format(tests.testname, subject.subjectname, question,answer)
+        add_question(tests, question, answer) #THIS IS BREAKING IT
         form.question.data = ''
         return redirect(url_for('questionbytest', testname=testname))
         
@@ -248,9 +261,11 @@ def add_test(subject, test):
         flash("Test already exists!")
             
             
-def add_question(test, question, correct_answer, incorrect_answer_list):
+def add_question(test, question, answer):
     try:
-        Question.create(test = test, question = question, correct_answer = correct_answer, incorrect_answer_list = incorrect_answer_list) #This is creating issues
+        #Question.create(question = question, correct_answer = correct_answer, incorrect_answer_list = incorrect_answer_list, test = test)
+        #Question.create(test = test, question = question, answer = answer)
+        Question.create(test = test, question = question, answer = answer)
         flash("Saved successfully.")
     except IntegrityError:
         flash("Test already exists!")

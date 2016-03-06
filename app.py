@@ -272,10 +272,10 @@ def view_tests(subject, search_query=None):
   #if search_query:
     #tests = tests.where(Test.testname.contains(search_query))
   if search_query is not None:
-    tests = Test.select().where(Test.testname == search_query).order_by(Test.testname.asc())  
+    tests = Test.select().where(Test.subject == subject).order_by(Test.testname.asc())  
     tests = tests.where(Test.testname.contains(search_query))
   else:
-    tests = Test.select().order_by(Test.testname.asc())    
+    tests = Test.select().where(Test.subject == subject).order_by(Test.testname.asc())  
   
   return tests
   

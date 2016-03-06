@@ -20,7 +20,7 @@ db = SqliteDatabase('learn.db')
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'Enter your secret key here bro'
+app.config['SECRET_KEY'] = 'KEEP THIS PRIVATE BTCH'
 
 manager = Manager(app)
 bootstrap = Bootstrap(app)
@@ -43,10 +43,10 @@ class Test(BaseModel):
 	
 	
 class Question(BaseModel):
-	test = ForeignKeyField(Test, related_name='questions')
-	question = TextField(unique=True)
-	answer = TextField()
-	incorrect_answer_list = TextField()
+    test = ForeignKeyField(Test, related_name='questions')
+    question = TextField(unique=True)
+    answer = TextField()
+    incorrect_answer_list = TextField()
     explanation = TextField()
 
 #-------------------------------Forms----------------------------------------#
@@ -130,11 +130,21 @@ def testbysubject(subjectname):
     
 @app.route('/questionbytest/<string:testname>')
 def questionbytest(testname):
+    subjectname=session['subject']
+    subjects=view_subjects(subjectname)
+    tests=view_tests(subjects, testname)
+    questions = view_questions(tests)
+    
+    #subjects = view_subjects(session['subject'])   
+    #tests = Test.select().where(Test.subject == subjects)
+    
     session['test']=testname
-    subjects=view_subjects(testname)
-    tests=view_tests(subjects) #need to put in subject, not testname here
+    
+    #subjects=view_subjects(tests) #commenting this broke it
+    #tests=view_tests(subjects) #need to put in subject, not testname here
+
     #have testname, just do a select of tests where testname = bleh   
-    return render_template('question.html', questions=view_questions(tests)) #PROBLEM HERE
+    return render_template('question.html', questions=questions) #PROBLEM HERE
       
     
     
@@ -180,10 +190,12 @@ def submitquestion(testname):
         #alternate method: session['question'] = form.question.data
         question = request.form['question']
         answer = request.form['answer']
+        incorrect_answer_list = request.form['incorrect_answer_list']
+        explanation = request.form['explanation']
             
         tests=view_tests(view_subjects(session['subject']))
 
-        add_question(tests, question, answer)
+        add_question(tests, question, answer, incorrect_answer_list, explanation)
         form.question.data = ''
         return redirect(url_for('questionbytest', testname=testname))
         
@@ -231,7 +243,26 @@ def deletetest(testname):
 
     #return redirect(url_for('subject'))
     return redirect(url_for('testbysubject', subjectname=subjectname))
+
+
+@app.route('/deletequestion/<string:question>', methods=['GET']) #jangus
+def deletequestion(question):
+    subjectname = session['subject'] #Jangus, need to do a better job of finding out question
+    subjects = view_subjects(subjectname)   
+    tests = Test.select().where(Test.subject == subjects)
+    testname = session['test']
+    questions = view_questions(tests, question)
+
+    #tests  = view_tests(subjects, testname)
+    #questions = view_questions(tests)
     
+    #delete all questions if questions is not None
+    if questions is not None:
+        for question in questions:
+            delete_question(question)
+
+    #return redirect(url_for('subject'))
+    return redirect(url_for('questionbytest', testname=testname))    
    
     
 #-------------------------------DB Add Methods----------------------------------------#
@@ -251,9 +282,9 @@ def add_test(subject, test):
         flash("Test already exists!")
             
             
-def add_question(test, question, answer):
+def add_question(test, question, answer, incorrect_answer_list, explanation):
     try:
-        Question.create(test = test, question = question, answer = answer)
+        Question.create(test = test, question = question, answer = answer, incorrect_answer_list = incorrect_answer_list, explanation = explanation)
         flash("Saved successfully.")
     except IntegrityError:
         flash("Test already exists!")

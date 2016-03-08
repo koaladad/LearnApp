@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Take Tests{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>Take Tests</h1>    
+</div>
+
+
+<table style="border-spacing: 30px; border-collapse: separate">
+{% for count in count_list %}
+    <tr>
+        <td>
+            <h4>
+                Question {{loop.index}}: {{question_arr[count]}}
+            </h4>                
+            <p>Possible answers: {{incorrect_answer_list[count]}}
+            <p>
+    <a href="javascript:showhide('uniquename-{{loop.index}}')">
+        View Answer
+    </a>
+
+    <div id="uniquename-{{loop.index}}" style="display:none;">
+        <p><strong>{{answer_arr[count]}}</strong></p>
+        <p>{{explanations[count]}}</p>
+    </div>
+
+        </td>
+    </tr>         
+{% endfor %}
+</table>
+{% endblock %}

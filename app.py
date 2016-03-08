@@ -21,7 +21,7 @@ db = SqliteDatabase('learn.db')
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'fdaskjfdas908*FNSD(F)*DSN)F*_Shsdafjkasdjf98n*(&N*7nfdasndhasfjfdsahn78y'
+app.config['SECRET_KEY'] = 'JangusDonahueDonahue'
 
 manager = Manager(app)
 bootstrap = Bootstrap(app)
